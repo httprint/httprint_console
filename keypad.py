@@ -129,10 +129,10 @@ def main():
                 logging.debug ("reset")
                 play("reset")
                 displaycode(code)
-            elif(key_lookup == keys.CANCEL): #Used to delete one char
-                code = code[:-1]
-                play("button")
-                displaycode(code)
+            # elif(key_lookup == keys.BACKSPACE): #Used to delete one char
+            #     code = code[:-1]
+            #     play("button")
+            #     displaycode(code)
             elif key_lookup in list("1234567890ABCD*#"):
                 code += key_lookup
                 play("button")
