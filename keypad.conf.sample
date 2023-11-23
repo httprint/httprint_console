@@ -1,0 +1,4 @@
+[MAIN]
+devicename = console1
+server = https://your.server.org
+token = token1
