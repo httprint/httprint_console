@@ -143,7 +143,7 @@ def main():
                     subprocess.call("cancel -a -x", shell=True)
                     code = ''
                     logging.debug ("Queue cleaned")
-                    play("reset")
+                    play("print")
 
                 displaycode(code)
 
