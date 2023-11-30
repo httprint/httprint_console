@@ -41,7 +41,7 @@ PRINTRAW_CMD = "lp -o raw %(in)s"
 
 # Read configuration
 config = configparser.ConfigParser()
-config.read('keypad.conf')
+config.read('console.conf')
 
 confmain = config['MAIN']
 DEVICENAME = confmain.get('devicename','')
@@ -54,7 +54,7 @@ colors = []
 
 
 def main():
-    logfname = os.path.join(os.path.dirname(os.path.realpath(__file__)),"keypad.log")
+    logfname = os.path.join(os.path.dirname(os.path.realpath(__file__)),"console.log")
     logging.basicConfig(filename=logfname, datefmt='%m/%d/%Y %H:%M:%S', format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
     # logging.getLogger().addHandler(logging.StreamHandler())
 
