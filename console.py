@@ -35,7 +35,7 @@ TMP = tempfile.gettempdir()
 CODE_DIGITS = 6
 temp_digits = 0
 
-PRINT_CMD = "lp -n %(copies)s -o sides=%(sides)s -o media=%(media)s %(colormodel)s %(in)s"
+PRINT_CMD = "lp -n %(copies)s -o sides=%(sides)s -o media=%(media)s %(colormodel)s -o fit-to-page %(in)s"
 PRINTRAW_CMD = "lp -o raw %(in)s"
 
 
