@@ -32,7 +32,7 @@ from getkey import getkey, keys
 TMP = tempfile.gettempdir()
 
 
-CODE_DIGITS = 6
+CODE_DIGITS = 4
 temp_digits = 0
 
 PRINT_CMD = "lp -n %(copies)s -o sides=%(sides)s -o media=%(media)s %(colormodel)s -o fit-to-page %(in)s"
@@ -50,6 +50,7 @@ TOKEN = confmain.get('token','')
 # ps = confmain.get('prespool','false')
 # PRESPOOL = ps.lower() in ['true', '1', 'y', 'yes']
 PRESPOOL = False
+INSTANCENAME = "HTTPRINT"
 colors = []
 
 
@@ -58,13 +59,27 @@ def main():
     logging.basicConfig(filename=logfname, datefmt='%m/%d/%Y %H:%M:%S', format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
     # logging.getLogger().addHandler(logging.StreamHandler())
 
+    url = f"{SERVER}/api/serverinfo"
+    try:
+        response = requests.get(url, timeout=5)
+    except requests.exceptions.RequestException as e:
+        logging.error("Server connection error")
+        play("fail")
+        display("Error", "No server")
+        return()
+    
+    message = response.json().get("message")
+    INSTANCENAME = message.get("instance-name")
+    CODE_DIGITS = message.get("code-digits")
+
+
     play("start")
     logging.info("start")
     logging.info("DEVICENAME: " + DEVICENAME)
     logging.info("SERVER: " + SERVER)
     # logging.info("PRESPOOL: " + str(PRESPOOL))
 
-    display("HTTPRINT", DEVICENAME)
+    display(INSTANCENAME, DEVICENAME)
     resetdisplay = True
     displaytime = time.time() + 10
 
@@ -106,15 +121,15 @@ def main():
         time.sleep(0.05)
 
         if resetdisplay == True and time.time() > displaytime:
-            displaycode(code)
             temp_digits = CODE_DIGITS
             resetdisplay = False
+            displaycode(code)
 
         if code != '':
             if time.time() > keytime + 3:
                 code = ''
                 #keytime = time.time()
-                logging.debug ("Resettato")
+                logging.debug ("Reset")
                 play("reset")
                 displaycode(code)
 
@@ -126,7 +141,7 @@ def main():
             if(key_lookup == keys.DELETE):
                 code = ''
                 temp_digits = CODE_DIGITS
-                logging.debug ("reset")
+                logging.debug ("Reset")
                 play("reset")
                 displaycode(code)
             # elif(key_lookup == keys.BACKSPACE): #Used to delete one char
