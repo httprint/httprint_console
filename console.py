@@ -26,6 +26,7 @@ import json
 import requests
 import configparser
 import tempfile
+import socket
 
 from getkey import getkey, keys
 
@@ -159,8 +160,17 @@ def main():
                     code = ''
                     logging.debug ("Queue cleaned")
                     play("print")
-
-                displaycode(code)
+                if code == "*98": # show ip, only for service
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("1.1.1.1", 80))
+                    display("IP",s.getsockname()[0])
+                    play("print")
+                    code = ''
+                    resetdisplay = True
+                    temp_digits = CODE_DIGITS
+                    displaytime = time.time() + 5
+                else:
+                    displaycode(code)
 
             if len(code) == temp_digits:
                 logging.debug(code)
