@@ -4,8 +4,9 @@ A very simple script to pull files from HTTPrint and send them to printer
 
 ## Requirements
 
-* CUPS
 * Python3
+* CUPS (on linux)
+* SumatraPDF (on windows)
 
 ## Install
 
@@ -14,6 +15,8 @@ Clone this repo
 Copy console.conf.sample to console.conf and change settings
 
 To have sounds, copy all [files](https://cloud.cristo.re/s/jfRFeHYKM3pcLPi) into "sounds" folder and install mpg123
+
+On windows, download [SumatraPDF](https://www.sumatrapdfreader.org/download-free-pdf-viewer) portable into the script folder
 
 Run console.py
 
