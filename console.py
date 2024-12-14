@@ -21,6 +21,7 @@ import subprocess
 from subprocess import DEVNULL
 import logging
 import json
+import glob
 
 
 import requests
@@ -37,8 +38,7 @@ CODE_DIGITS = 4
 temp_digits = 0
 
 PRINT_CMD = "lp -n %(copies)s -o sides=%(sides)s -o media=%(media)s %(colormodel)s -o fit-to-page %(in)s"
-PRINTRAW_CMD = "lp -o raw %(in)s"
-
+PRINT_CMD_WIN = "%(exe)s -print-to-default -print-settings fit,paper=%(paper)s,%(duplex)s,%(color)s,%(copies)sx %(filepath)s"
 
 # Read configuration
 config = configparser.ConfigParser()
@@ -48,11 +48,14 @@ confmain = config['MAIN']
 DEVICENAME = confmain.get('devicename','')
 SERVER = confmain.get('server','')
 TOKEN = confmain.get('token','')
-# ps = confmain.get('prespool','false')
-# PRESPOOL = ps.lower() in ['true', '1', 'y', 'yes']
 PRESPOOL = False
 INSTANCENAME = "HTTPRINT"
 colors = []
+exe = ""
+ 
+
+
+
 
 
 def main():
@@ -84,32 +87,27 @@ def main():
     resetdisplay = True
     displaytime = time.time() + 10
 
-    # #search ppd file
-    # prn = subprocess.check_output("lpstat -d | awk '{print $NF}'", shell=True).decode("utf-8").strip()
-    # logging.info("prn: " + prn)
-    # ppd = "/etc/cups/ppd/" + prn +".ppd"
-    # logging.info("ppd: " + ppd)
-    # #search standard ppd name
-    # with open(ppd) as ppdfile:
-    #     ppdstd = [x for x in ppdfile if x.startswith("*PCFileName:")]
-    #     ppdstd = ppdstd[0].lower().split('"')[1].split(".ppd")[0]
-    # logging.info("ppdstd: " + ppdstd)
     
-    #search color capabilities
-    global colors
-    try:
-        col = subprocess.check_output("lpoptions -l | grep ColorModel", shell=True).decode("utf-8").strip()
-        col = col.split(":")[1]
-        col = col.replace("*","").strip().split(" ")
-        if len(col) == 1:
-            colors = [col[0], col[0]]
-        elif len(col) == 2:
-            colgray = [i for i in col if i.lower() in ["gray","grayscale"]][0]
-            colcol = [i for i in col if i != colgray][0]
-            colors = [colgray, colcol]
-    except:
-        pass
+    global colors, exe
+    if os.name == "posix":
+        #search color capabilities
+        try:
+            col = subprocess.check_output("lpoptions -l | grep ColorModel", shell=True).decode("utf-8").strip()
+            col = col.split(":")[1]
+            col = col.replace("*","").strip().split(" ")
+            if len(col) == 1:
+                colors = [col[0], col[0]]
+            elif len(col) == 2:
+                colgray = [i for i in col if i.lower() in ["gray","grayscale"]][0]
+                colcol = [i for i in col if i != colgray][0]
+                colors = [colgray, colcol]
+        except:
+            pass
 
+    elif os.name == "nt":
+        exe = glob.glob(os.path.join(os.path.dirname(os.path.realpath(__file__)),"sumatra*.exe"))
+        if exe:
+            exe = sorted(exe, reverse=True)[0]
 
     code = ""
     global key_lookup
@@ -250,29 +248,32 @@ def searchprint(code, ppdstd, ps):
     media = printconf.get("media", "A4")
     color = strbool(printconf.get("color", False))
 
-    colormodel = ""
-    if colors:
-        colormodel = colors[0] if not color else colors[1]
-        colormodel = "-o ColorModel=" + colormodel
-
-    logging.info ("Printing " + tfname)
+    logging.info ("Printing " + os.path.basename(tfname))
     play("print")
     display("Printing", name)
 
     #print
-    if ps:
-        cmd = PRINTRAW_CMD.split(' ')
-        cmd = [x % {'in': tfname} for x in cmd]
-    else:
+    if os.name == "posix":
+        colormodel = ""
+        if colors:
+            colormodel = colors[0] if not color else colors[1]
+            colormodel = "-o ColorModel=" + colormodel
         cmd = PRINT_CMD.split(' ')
         cmd = [x % {'in': tfname, 'copies': copies, 'sides': sides, 'media': media, 'colormodel': colormodel} for x in cmd]
+        cmd = " ".join(cmd)
 
-    cmd = " ".join(cmd)
+    elif os.name == "nt":
+        dsides = {"one-sided":"simplex", "two-sided-long-edge":"duplexlong", "two-sided-short-edge":"duplexshort"}
+        duplex = dsides[sides]
+        vcolor = "color" if color else "monochrome"
+
+        cmd = PRINT_CMD_WIN.split(' ')
+        cmd = [x % {'exe': exe, 'filepath': tfname, 'copies': copies, 'duplex': duplex, 'paper': media, 'color': vcolor} for x in cmd]
+        cmd = " ".join(cmd)
 
     logging.debug(cmd)
     subprocess.call(cmd, shell=True, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
     os.remove(tfname)
-
 
 def strbool(s):
     return s.lower() in ('true', '1', 't', 'y', 'yes')
